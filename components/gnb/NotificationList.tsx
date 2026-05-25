@@ -38,6 +38,7 @@ export default function NotificationList() {
   );
 
   const allNotifications = data?.pages.flatMap(page => page.notifications) ?? [];
+  const totalCount = data?.pages[0]?.totalCount ?? 0;
   const filtered = allNotifications.filter(noti => {
     if (selectedCategory === 'all') return true;
     if (selectedCategory === 'approved') return noti.content.includes('승인');
@@ -46,10 +47,10 @@ export default function NotificationList() {
   });
 
   return (
-    <div className=" bg-[#CDE8D5] w-full h-full sm:w-full sm:h-auto sm:max-h-[400px] overflow-y-auto">
-      <div className="p-3 sticky top-0 bg-[#CDE8D5]">
+    <div className="bg-[#607065] w-full h-full sm:w-full sm:h-auto sm:max-h-[400px] overflow-y-auto">
+      <div className="p-3 sticky top-0 bg-[#607065]">
         <div className="flex items-center px-3 py-x">
-          <span className="text-xl-bold mt-[5px] mb-[5px]">알림 {filtered.length}개</span>
+          <span className="text-xl-bold mt-[5px] mb-[5px]">알림 {totalCount}개</span>
         </div>
         <div className="flex gap-2 mx-2  mb-2">
           {(['all', 'approved', 'rejected'] as const).map(category => (
@@ -59,7 +60,10 @@ export default function NotificationList() {
                 selectedCategory === category ? 'bg-black text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }
           `}
-              onClick={() => setSelectedCategory(category)}
+              onClick={e => {
+                e.stopPropagation();
+                setSelectedCategory(category);
+              }}
             >
               {category === 'all' ? '전체' : category === 'approved' ? '예약 승인' : '예약 거절'}
             </button>
