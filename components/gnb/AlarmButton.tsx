@@ -1,6 +1,6 @@
-//components/gnb/AlarmButton.tsx
 'use client';
 
+import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import NotificationPopover from './NotificationPopover';
 import NotificationList from './NotificationList';
@@ -18,13 +18,14 @@ export default function AlarmButton({ user }: AlarmButtonProps) {
   const [isAlarmOpen, setIsAlarmOpen] = useState(false);
   const [hasNewNotification, setHasNewNotification] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  const { data } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ['myNotificationAlarm'],
     queryFn: () => getMyNotifications({ size: 10 }),
-    staleTime: 0,
+    staleTime: 1000 * 30,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     enabled: !!user,
   });
 
@@ -41,27 +42,33 @@ export default function AlarmButton({ user }: AlarmButtonProps) {
       return createdAt > lastCheckedAt;
     });
 
-    setHasNewNotification(hasNew);
+    setHasNewNotification(prev => (prev === hasNew ? prev : hasNew));
   }, [notificationsArray]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      const clickedAlarmButton = wrapperRef.current?.contains(target);
+      const clickedPopover = popoverRef.current?.contains(target);
+
+      if (!clickedAlarmButton && !clickedPopover) {
         setIsAlarmOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (!user) return null;
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    await refetch();
+
     setIsAlarmOpen(prev => !prev);
+    setHasNewNotification(false);
 
-    setHasNewNotification(false); //알람 열면 점 제거
-
-    //알림 확인 시간 저장 -> 점 활성화할지 비활성화할지 정하게 됨
     localStorage.setItem('lastNotificationCheckedAt', new Date().toISOString());
   };
 
@@ -70,25 +77,32 @@ export default function AlarmButton({ user }: AlarmButtonProps) {
   };
 
   return (
-    <div ref={wrapperRef} className="flex relative items-center">
+    <div ref={wrapperRef} className="relative flex h-8 w-8 items-center justify-center">
       <button
-        onClick={e => {
+        onClick={async e => {
           e.stopPropagation();
-          handleClick();
+          await handleClick();
         }}
-        className="transition ease-in-out hover:font-bold hover:scale-105"
+        className="relative flex h-8 w-8 items-center justify-center transition ease-in-out hover:scale-105"
       >
-        <Image src={alarmIcon} alt="알림" width={20} height={20} />
-        {hasNewNotification && (
-          <span className="absolute top-[-2px] right-[-2px] w-[8px] h-[8px] bg-red-500 rounded-full" />
-        )}
+        <Image src={alarmIcon} alt="알림" width={20} height={20} priority className="h-5 w-5" />
+
+        <span
+          className={`absolute right-[5px] top-[5px] h-2 w-2 rounded-full bg-red-500 transition-opacity duration-150 ${
+            hasNewNotification ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
       </button>
 
-      {isAlarmOpen && (
-        <NotificationPopover onClose={handleClose}>
-          <NotificationList />
-        </NotificationPopover>
-      )}
+      {isAlarmOpen &&
+        createPortal(
+          <div ref={popoverRef}>
+            <NotificationPopover onClose={handleClose}>
+              <NotificationList />
+            </NotificationPopover>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
