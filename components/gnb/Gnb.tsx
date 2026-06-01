@@ -1,29 +1,5 @@
-// import { fetchFromServer } from '@/lib/fetchFromServer';
-// import GNBClient from './GnbClient';
-
-// export default async function Gnb() {
-//   let user = null;
-
-//   try {
-//     const res = await fetchFromServer('/users/me');
-//     user = await res.json();
-//   } catch (err) {
-//     if (err instanceof Error) {
-//       if (err.message.includes('401')) {
-//         //로그인 안 된 상태 => user은 그대로 null
-//       } else {
-//         console.error('Gnb 유저 정보 fetch 실패:', err);
-//       }
-//     } else {
-//       console.error('알 수 없는 에러:', err);
-//     }
-//   }
-
-//   return <GNBClient user={user} />;
-// }
-
 import { fetchFromServer } from '@/lib/fetchFromServer';
-import { UserServiceResponseDto as User } from '@/types';
+import type { GetMyInfoSuccessResponse as User } from '@/types/domain/user/types';
 import GNBClient from './GnbClient';
 
 export default async function Gnb() {
@@ -31,13 +7,15 @@ export default async function Gnb() {
 
   try {
     const res = await fetchFromServer('/users/me');
-    user = await res.json();
-  } catch (err) {
-    if (err instanceof Error && err.message.includes('401')) {
+
+    if (!res.ok) {
+      // 401, 403 등 에러 응답 처리
       user = null;
     } else {
-      console.error('Gnb 유저 정보 fetch 실패:', err);
+      user = await res.json();
     }
+  } catch (err) {
+    console.error('Gnb 유저 정보 fetch 실패:', err);
   }
 
   return <GNBClient user={user} />;

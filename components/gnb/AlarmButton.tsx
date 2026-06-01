@@ -8,7 +8,7 @@ import Image from 'next/image';
 import alarmIcon from '@/public/ic_alarm.svg';
 import { useQuery } from '@tanstack/react-query';
 import { getMyNotifications } from '@/services/myNotifications';
-import { UserServiceResponseDto as User } from '@/types';
+import type { GetMyInfoSuccessResponse as User } from '@/types/domain/user/types';
 
 interface AlarmButtonProps {
   user?: User;
@@ -21,12 +21,13 @@ export default function AlarmButton({ user }: AlarmButtonProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const { data, refetch } = useQuery({
-    queryKey: ['myNotificationAlarm'],
+    queryKey: ['myNotificationAlarm', user?.id],
     queryFn: () => getMyNotifications({ size: 10 }),
     staleTime: 1000 * 30,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-    enabled: !!user,
+    enabled: !!user?.id,
+    retry: false,
   });
 
   const notificationsArray = useMemo(() => {
@@ -64,6 +65,8 @@ export default function AlarmButton({ user }: AlarmButtonProps) {
   if (!user) return null;
 
   const handleClick = async () => {
+    if (!user?.id) return;
+
     await refetch();
 
     setIsAlarmOpen(prev => !prev);

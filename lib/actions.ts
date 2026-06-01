@@ -1,8 +1,7 @@
-'use server'; // 이 파일의 모든 함수는 서버 액션이 됩니다.
+'use server';
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 export async function handleLogout() {
   try {
@@ -19,10 +18,6 @@ export async function handleLogout() {
     return;
   }
   revalidatePath('/');
-  // revalidatePath('/mypage'); // 마이페이지 등 관련 페이지도 추가
-
-  // 로그아웃 후 사용자를 홈페이지로 보냅니다.
-  redirect('/');
 
   // redirect()는 에러를 throw하므로 그 아래 코드는 실행되지 않습니다.
   // 따라서 일반적으로는 try...catch 블록 바깥에 둡니다.
