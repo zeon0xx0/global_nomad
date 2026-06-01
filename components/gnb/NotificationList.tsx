@@ -5,17 +5,24 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useCallback, useState } from 'react';
 import NotificationCard from './NotificationCard';
 import ComponentSpinner from '../common/spinners/ComponentSpinner';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function NotificationList() {
+  const user = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'approved' | 'rejected'>('all');
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['myNotifications'],
-    queryFn: ({ pageParam = undefined }: { pageParam?: number }) =>
-      getMyNotifications({ cursorId: pageParam, size: 5 }),
+    queryKey: ['myNotifications', user?.id],
+    queryFn: ({ pageParam = undefined }) =>
+      getMyNotifications({
+        cursorId: pageParam as number | undefined,
+        size: 5,
+      }),
     getNextPageParam: lastPage => lastPage.cursorId ?? undefined,
-    initialPageParam: undefined,
+    initialPageParam: undefined as number | undefined,
+    enabled: !!user?.id,
+    retry: false,
   });
 
   const delMutation = useMutation({
