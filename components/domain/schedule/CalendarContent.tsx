@@ -1,20 +1,21 @@
-//예약, 완료, 승인칸 ui
-import { EventContentArg } from '@fullcalendar/core';
+import type { EventContentArg } from '@fullcalendar/core';
+import { statusMap, type ReservationStatus } from '@/constants/statusMap';
 
-interface CalendarContentProps {
-  eventInfo: EventContentArg;
-}
+type CalendarStatus = Extract<ReservationStatus, 'pending' | 'confirmed' | 'completed'>;
 
-export default function CalendarContent({ eventInfo }: CalendarContentProps) {
-  const bgColor = eventInfo.event.backgroundColor;
-  const title = eventInfo.event.title;
+const calendarStatusStyleMap: Record<CalendarStatus, string> = {
+  pending: 'text-white font-regular',
+  confirmed: 'text-orange-500 font-regular',
+  completed: 'text-gray-900 font-regular',
+};
+
+export default function CalendarContent({ eventInfo }: { eventInfo: EventContentArg }) {
+  const status = eventInfo.event.extendedProps.status as CalendarStatus;
+  const count = eventInfo.event.extendedProps.count as number;
 
   return (
-    <div
-      className="text-white text-xs px-2  py-[2px] rounded md-1 w-fit max-w-full- break-keep cursor-pointer"
-      style={{ backgroundColor: bgColor }}
-    >
-      {title}
+    <div className={`w-full rounded px-1 py-[2px] text-xs font-semibold ${calendarStatusStyleMap[status]}`}>
+      {statusMap[status].calendarText} {count}
     </div>
   );
 }
