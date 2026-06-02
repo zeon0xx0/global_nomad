@@ -1,28 +1,27 @@
-//클라이언트 컴포넌트
-
 'use client';
 
-import Calendar from '@/components/domain/schedule/Calendar';
-import ReservationModal from '@/components/domain/schedule/ReservationModal';
+import { Calendar, ScheduleItem } from '@/components/domain/schedule/Calendar';
+import { ReservationModal } from '@/components/domain/schedule/ReservationModal';
+//import { type ReservationManageStatus, type ReservationStatus } from '@/constants/statusMap';
 import { getMyReservationBoard } from '@/services/myActivities';
 import { useModalStore } from '@/store/modalStore';
 import { useReservationStore } from '@/store/useReservationStore';
+import { getYearMonth } from '@/constants/utils/reservationDate';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
 
-interface ScheduleItem {
-  date: string;
-  status: '예약' | '승인' | '완료';
-  count: number;
-}
+// type CalendarStatus = Extract<ReservationStatus, 'pending' | 'confirmed' | 'completed'>;
+
+// const tabMap: Record<CalendarStatus, ReservationManageStatus | null> = {
+//   pending: 'pending',
+//   confirmed: 'confirmed',
+//   completed: null,
+// };
 
 export default function MyReservationCalendar({ activityId }: { activityId: number }) {
   const { openModal } = useModalStore();
   const { setStatusTab } = useReservationStore();
 
-  const today = new Date();
-  const year = format(today, 'yyyy');
-  const month = format(today, 'MM');
+  const { year, month } = getYearMonth();
 
   const { data } = useQuery({
     queryKey: ['reservationBoard', activityId, year, month],
@@ -30,32 +29,57 @@ export default function MyReservationCalendar({ activityId }: { activityId: numb
     enabled: !!activityId,
   });
 
-  //api를 calendar 형태에 맞게 변환
+  console.log('예약 현황 캘린더 data:', data);
+
   const scheduleData: ScheduleItem[] =
-    activityId && data
-      ? data.flatMap(item => [
-          { date: item.date, status: '예약', count: item.reservations.pending },
-          { date: item.date, status: '승인', count: item.reservations.confirmed },
-          { date: item.date, status: '완료', count: item.reservations.completed },
-        ])
-      : [];
+    data?.flatMap(item => [
+      {
+        date: item.date,
+        status: 'pending',
+        count: item.reservations.pending,
+      },
+      {
+        date: item.date,
+        status: 'confirmed',
+        count: item.reservations.confirmed,
+      },
+      {
+        date: item.date,
+        status: 'completed',
+        count: item.reservations.completed,
+      },
+    ]) ?? [];
+
+  //   return (
+  //     <Calendar
+  //       schedule={scheduleData}
+  //       onClickItem={(date, status) => {
+  //         const reservationStatus = tabMap[status];
+
+  //         if (!reservationStatus) return;
+
+  //         setStatusTab(reservationStatus);
+
+  //         openModal(ReservationModal, {
+  //           activityId,
+  //           selectedDate: date,
+  //           initialStatus: reservationStatus,
+  //         });
+  //       }}
+  //     />
+  //   );
+  // }
 
   return (
     <Calendar
       schedule={scheduleData}
-      activityId={activityId}
-      onClickItem={(date, status) => {
-        const tabMap = {
-          예약: 'pending',
-          승인: 'confirmed',
-          완료: 'pending',
-        } as const;
-
-        setStatusTab(tabMap[status]);
+      onClickItem={date => {
+        setStatusTab('pending');
 
         openModal(ReservationModal, {
           activityId,
-          date,
+          selectedDate: date,
+          initialStatus: 'pending',
         });
       }}
     />

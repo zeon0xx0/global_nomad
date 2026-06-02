@@ -2,7 +2,8 @@
 
 import { delMyNotifications, getMyNotifications } from '@/services/myNotifications';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import NotificationCard from './NotificationCard';
 import ComponentSpinner from '../common/spinners/ComponentSpinner';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -30,19 +31,11 @@ export default function NotificationList() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myNotifications'] }),
   });
 
-  const observerRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (!node || !hasNextPage || isFetchingNextPage) return;
-
-      const observer = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) {
-          fetchNextPage();
-        }
-      });
-      observer.observe(node);
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage],
-  );
+  const observerRef = useInfiniteScroll({
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   const allNotifications = data?.pages.flatMap(page => page.notifications) ?? [];
   const totalCount = data?.pages[0]?.totalCount ?? 0;

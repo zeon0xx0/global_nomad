@@ -1,10 +1,12 @@
-export const filterOptions = [
+import { statusMap, type ReservationStatus } from './statusMap';
+
+export const filterOptions: { value: '' | ReservationStatus; label: string }[] = [
   { value: '', label: '전체' },
-  { value: 'pending', label: '예약 신청' },
-  { value: 'canceled', label: '예약 취소' },
-  { value: 'confirmed', label: '예약 승인' },
-  { value: 'declined', label: '예약 거절' },
-  { value: 'completed', label: '체험 완료' },
+  { value: 'pending', label: statusMap.pending.filterText },
+  { value: 'canceled', label: statusMap.canceled.filterText },
+  { value: 'confirmed', label: statusMap.confirmed.filterText },
+  { value: 'declined', label: statusMap.declined.filterText },
+  { value: 'completed', label: statusMap.completed.filterText },
 ];
 
 export const CATEGORIES = ['문화 · 예술', '식음료', '스포츠', '투어', '관광', '웰빙'];

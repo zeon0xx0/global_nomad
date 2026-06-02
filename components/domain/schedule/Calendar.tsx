@@ -2,36 +2,45 @@
 
 import dayGridPlugin from '@fullcalendar/daygrid';
 import FullCalendar from '@fullcalendar/react';
-import { EventClickArg, EventInput } from '@fullcalendar/core';
-import { calendarColor } from '@/lib/calendarColor';
+import type { EventClickArg, EventInput } from '@fullcalendar/core';
 import CalendarContent from './CalendarContent';
+import { statusMap, type ReservationStatus } from '@/constants/statusMap';
 
-interface ScheduleItem {
+type CalendarStatus = Extract<ReservationStatus, 'pending' | 'confirmed' | 'completed'>;
+
+export interface ScheduleItem {
   date: string;
-  status: string;
+  status: CalendarStatus;
   count: number;
 }
 
-interface Props {
+interface CalendarProps {
   schedule: ScheduleItem[];
-  activityId: number;
-  onClickItem?: (date: string, status: '예약' | '승인' | '완료') => void;
+  onClickItem: (date: string, status: CalendarStatus) => void;
 }
 
-export default function Calendar({ schedule, onClickItem }: Props) {
+const calendarStatusColorMap: Record<CalendarStatus, string> = {
+  pending: '#0085FF',
+  confirmed: '#FFF4E8',
+  completed: '#DDDDDD',
+};
+
+export function Calendar({ schedule, onClickItem }: CalendarProps) {
   const events: EventInput[] = schedule.map(item => ({
-    title: `${item.status} ${item.count}`,
+    title: `${statusMap[item.status].calendarText} ${item.count}`,
     date: item.date,
-    color: calendarColor(item.status),
+    color: calendarStatusColorMap[item.status],
+    extendedProps: {
+      status: item.status,
+      count: item.count,
+    },
   }));
 
   const handleEventClick = (arg: EventClickArg) => {
-    const [status] = arg.event.title.split(' ');
+    const status = arg.event.extendedProps.status as CalendarStatus;
     const date = arg.event.startStr;
 
-    if (status === '예약' || status === '승인' || status === '완료') {
-      onClickItem?.(date, status as '예약' | '승인' | '완료');
-    }
+    onClickItem(date, status);
   };
 
   return (
